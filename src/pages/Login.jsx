@@ -9,6 +9,10 @@ import {
   Stack,
   TextField,
   Typography,
+  Box,
+  Modal,
+  Backdrop,
+  Fade,
 } from "@mui/material";
 import axios from "axios";
 import React, { useState } from "react";
@@ -19,12 +23,17 @@ import { bgGradient } from "../constants/color";
 import { server } from "../constants/config";
 import { userExists } from "../redux/reducers/auth";
 import { usernameValidator } from "../utils/validators";
+import PasswordField from "./PasswordField.jsx";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [email, setEmail] = useState("");
 
   const toggleLogin = () => setIsLogin((prev) => !prev);
+  const handleForgotPasswordOpen = () => setForgotPasswordOpen(true);
+  const handleForgotPasswordClose = () => setForgotPasswordOpen(false);
 
   const name = useInputValidation("");
   const bio = useInputValidation("");
@@ -81,6 +90,7 @@ const Login = () => {
     formData.append("name", name.value);
     formData.append("bio", bio.value);
     formData.append("username", username.value);
+    formData.append("email", email);
     formData.append("password", password.value);
 
     const config = {
@@ -107,6 +117,35 @@ const Login = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPasswordSubmit = async () => {
+    const toastId = toast.loading("Sending Reset Link...");
+
+    setIsLoading(true);
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    try {
+      const { data } = await axios.post(
+        `${server}/api/v1/user/forgot-password`,
+        { email },
+        config
+      );
+      toast.success(data.message, {
+        id: toastId,
+      });
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Something Went Wrong", {
+        id: toastId,
+      });
+    } finally {
+      setIsLoading(false);
+      handleForgotPasswordClose();
     }
   };
 
@@ -144,6 +183,7 @@ const Login = () => {
                 }}
                 onSubmit={handleLogin}
               >
+               
                 <TextField
                   required
                   fullWidth
@@ -154,29 +194,43 @@ const Login = () => {
                   onChange={username.changeHandler}
                 />
 
-                <TextField
-                  required
-                  fullWidth
+                <PasswordField
                   label="Password"
-                  type="password"
-                  margin="normal"
-                  variant="outlined"
                   value={password.value}
                   onChange={password.changeHandler}
                 />
 
-                <Button
+                <Box
                   sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     marginTop: "1rem",
                   }}
-                  variant="contained"
-                  color="primary"
-                  type="submit"
-                  fullWidth
-                  disabled={isLoading}
                 >
-                  Login
-                </Button>
+                  <Button
+                    sx={{
+                      marginTop: "1rem",
+                    }}
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                    // fullWidth
+                    disabled={isLoading}
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    sx={{
+                      marginTop: "1rem",
+                    }}
+                    color="success"
+                    onClick={handleForgotPasswordOpen}
+                    variant="contained"
+                  >
+                    Forgot Password
+                  </Button>
+                </Box>
 
                 <Typography textAlign={"center"} m={"1rem"}>
                   OR
@@ -188,9 +242,59 @@ const Login = () => {
                   variant="text"
                   onClick={toggleLogin}
                 >
-                  Sign Up 
+                  Sign Up
                 </Button>
               </form>
+
+              <Modal
+                open={forgotPasswordOpen}
+                onClose={handleForgotPasswordClose}
+                closeAfterTransition
+                BackdropComponent={Backdrop}
+                BackdropProps={{
+                  timeout: 500,
+                }}
+              >
+                <Fade in={forgotPasswordOpen}>
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: 400,
+                      bgcolor: "background.paper",
+                      border: "2px solid #000",
+                      boxShadow: 24,
+                      p: 4,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography variant="h6">Reset Password</Typography>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Email"
+                      margin="normal"
+                      variant="outlined"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <Button
+                      sx={{
+                        marginTop: "1rem",
+                      }}
+                      color="primary"
+                      onClick={handleForgotPasswordSubmit}
+                      disabled={isLoading}
+                    >
+                      Send Reset Link
+                    </Button>
+                  </Box>
+                </Fade>
+              </Modal>
             </>
           ) : (
             <>
@@ -198,7 +302,7 @@ const Login = () => {
               <form
                 style={{
                   width: "100%",
-                  marginTop: "1rem",
+                  // marginTop: "1rem",
                 }}
                 onSubmit={handleSignUp}
               >
@@ -261,6 +365,16 @@ const Login = () => {
                 <TextField
                   required
                   fullWidth
+                  label="Email"
+                  margin="normal"
+                  variant="outlined"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+
+                <TextField
+                  required
+                  fullWidth
                   label="Bio"
                   margin="normal"
                   variant="outlined"
@@ -283,20 +397,15 @@ const Login = () => {
                   </Typography>
                 )}
 
-                <TextField
-                  required
-                  fullWidth
+                <PasswordField
                   label="Password"
-                  type="password"
-                  margin="normal"
-                  variant="outlined"
                   value={password.value}
                   onChange={password.changeHandler}
                 />
 
                 <Button
                   sx={{
-                    marginTop: "1rem",
+                    marginTop: "0.1rem",
                   }}
                   variant="contained"
                   color="primary"
@@ -307,7 +416,7 @@ const Login = () => {
                   Sign Up
                 </Button>
 
-                <Typography textAlign={"center"} m={"1rem"}>
+                <Typography textAlign={"center"}>
                   OR
                 </Typography>
 
