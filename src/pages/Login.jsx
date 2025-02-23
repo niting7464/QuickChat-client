@@ -205,7 +205,7 @@ const Login = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginTop: "1rem",
+                    marginTop: "1.5rem",
                   }}
                 >
                   <Button
